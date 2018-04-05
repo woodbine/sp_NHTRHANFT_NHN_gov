@@ -98,17 +98,34 @@ soup = BeautifulSoup(html, 'lxml')
 
 blocks = soup.find_all('a')
 for block in blocks:
-    if '.csv' in block['href'] or '.xls' in block['href'] or '.xlsx' in block['href'] or '.pdf' in block['href']:
-        link = 'http://www.nottinghamshirehealthcare.nhs.uk'+block['href']
-        title = block.text.strip().split()
-        csvMth = title[0][:3]
-        csvYr = title[1][:4]
-        if '25k' in csvYr:
-            csvYr = title[0][-4:]
-        if 'June' in csvYr:
-            csvYr = '2013'
-        csvMth = convert_mth_strings(csvMth.upper())
-        data.append([csvYr, csvMth, link])
+    if 'spend over' in block.text:
+        link = 'https://www.nottinghamshirehealthcare.nhs.uk/financial-information' + block['href']
+        html = urllib2.urlopen(link)
+        soup = BeautifulSoup(html, 'lxml')
+        rows = soup.find_all('a', 'file-name file-type-csv')
+        for row in rows:
+            if '.csv' in row['href'] or '.xls' in row['href'] or '.xlsx' in row['href'] or '.pdf' in row['href']:
+                url = 'https://www.nottinghamshirehealthcare.nhs.uk'+row['href']
+                title = row.text.strip().split()
+                csvMth = title[1][:3]
+                csvYr = title[2]
+                num_index = int(row.text.strip()[:2])
+                if '25k' in csvYr:
+                    csvYr = title[0][-4:]
+                if 'June' in csvYr:
+                    csvYr = '2013'
+                if 'smbfolder=95' in link and 'spend' in csvYr:
+                    if num_index <10:
+                        csvYr = '2013'
+                    else:
+                        csvYr = '2014'
+                if 'smbfolder=446' in link and 'spend' in csvYr:
+                    if num_index <10:
+                        csvYr = '2017'
+                    else:
+                        csvYr = '2018'
+                csvMth = convert_mth_strings(csvMth.upper())
+                data.append([csvYr, csvMth, url])
 
 
 #### STORE DATA 1.0
